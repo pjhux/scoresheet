@@ -2,9 +2,29 @@ import streamlit as st
 import pandas as pd
 import sqlite3
 
-# Load the full fixtures.csv dynamically
-fixtures_path = 'fixtures.csv'  # Ensure this file is in the same directory as the app or provide a path
+# Load and use the cleaned fixtures.csv data
+fixtures_path = 'fixtures.csv'  # Ensure this file is in the same directory as the app or provide the path
 matches_df = pd.read_csv(fixtures_path)
+
+# Reformat data to extract Round, Pitch, Team1, and Team2 columns
+def load_and_clean_fixtures(df):
+    cleaned_matches = []
+    for i in range(3, len(df)):
+        round_num = df.iloc[i, 0]
+        for pitch in range(1, 6, 2):  # Columns are offset for pitch-team structure
+            team1 = df.iloc[i, pitch]
+            team2 = df.iloc[i, pitch + 1]
+            pitch_num = f"Pitch {(pitch // 2) + 1}"
+            if pd.notna(team1) and pd.notna(team2) and pd.notna(round_num):
+                cleaned_matches.append({
+                    "Round": int(round_num),
+                    "Pitch": pitch_num,
+                    "Team1": team1,
+                    "Team2": team2
+                })
+    return pd.DataFrame(cleaned_matches)
+
+matches_df = load_and_clean_fixtures(matches_df)
 
 # Database setup function
 def init_db():
@@ -56,7 +76,7 @@ selected_pitch = st.selectbox("Select Pitch", pitches)
 pitch_matches = round_matches[round_matches['Pitch'] == selected_pitch]
 
 # Step 3: Display Matches and Score Input
-st.write(f"Matches for {selected_round}, {selected_pitch}")
+st.write(f"Matches for Round {selected_round}, Pitch {selected_pitch}")
 match_scores = []
 
 for _, row in pitch_matches.iterrows():

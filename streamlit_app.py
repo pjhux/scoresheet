@@ -2,16 +2,14 @@ import streamlit as st
 import pandas as pd
 import sqlite3
 
-# Load and use the cleaned fixtures.csv data
-fixtures_path = 'fixtures.csv'  # Ensure this file is in the same directory as the app or provide the path
-matches_df = pd.read_csv(fixtures_path)
-
-# Reformat data to extract Round, Pitch, Team1, and Team2 columns
-def load_and_clean_fixtures(df):
+# Load and clean the fixtures data from CSV
+def load_and_clean_fixtures():
+    fixtures_path = 'fixtures.csv'
+    df = pd.read_csv(fixtures_path)
     cleaned_matches = []
     for i in range(3, len(df)):
         round_num = df.iloc[i, 0]
-        for pitch in range(1, 6, 2):  # Columns are offset for pitch-team structure
+        for pitch in range(1, 6, 2):
             team1 = df.iloc[i, pitch]
             team2 = df.iloc[i, pitch + 1]
             pitch_num = f"Pitch {(pitch // 2) + 1}"
@@ -24,9 +22,9 @@ def load_and_clean_fixtures(df):
                 })
     return pd.DataFrame(cleaned_matches)
 
-matches_df = load_and_clean_fixtures(matches_df)
+matches_df = load_and_clean_fixtures()
 
-# Database setup function
+# Initialize database connection
 def init_db():
     conn = sqlite3.connect('results.db')
     cursor = conn.cursor()
@@ -44,7 +42,9 @@ def init_db():
     conn.commit()
     conn.close()
 
-# Insert match result into the database
+init_db()
+
+# Helper function to insert match results into the database
 def insert_match_result(round, pitch, team1, team1_score, team2, team2_score):
     conn = sqlite3.connect('results.db')
     cursor = conn.cursor()
@@ -55,69 +55,74 @@ def insert_match_result(round, pitch, team1, team1_score, team2, team2_score):
     conn.commit()
     conn.close()
 
-# Initialize the database
-init_db()
-
-# App title
-st.title("Match Score Recorder")
+# Navigation state management
+if 'step' not in st.session_state:
+    st.session_state.step = 1
+if 'selected_round' not in st.session_state:
+    st.session_state.selected_round = None
+if 'selected_pitch' not in st.session_state:
+    st.session_state.selected_pitch = None
 
 # Step 1: Select Round
-rounds = matches_df['Round'].unique()
-selected_round = st.selectbox("Select Round", rounds)
-
-# Filter matches based on the selected round
-round_matches = matches_df[matches_df['Round'] == selected_round]
+if st.session_state.step == 1:
+    st.title("Select a Round")
+    rounds = matches_df['Round'].unique()
+    
+    for round_num in rounds:
+        if st.button(f"Round {round_num}"):
+            st.session_state.selected_round = round_num
+            st.session_state.step = 2  # Go to Step 2
 
 # Step 2: Select Pitch
-pitches = round_matches['Pitch'].unique()
-selected_pitch = st.selectbox("Select Pitch", pitches)
-
-# Filter matches for the selected pitch
-pitch_matches = round_matches[round_matches['Pitch'] == selected_pitch]
-
-# Step 3: Display Matches and Score Input
-st.write(f"Matches for Round {selected_round}, Pitch {selected_pitch}")
-match_scores = []
-
-for _, row in pitch_matches.iterrows():
-    team1 = row['Team1']
-    team2 = row['Team2']
+elif st.session_state.step == 2:
+    st.title(f"Select a Pitch for Round {st.session_state.selected_round}")
+    round_matches = matches_df[matches_df['Round'] == st.session_state.selected_round]
+    pitches = round_matches['Pitch'].unique()
     
-    st.write(f"Match: {team1} vs {team2}")
-    
-    # Input scores for each team
-    team1_score = st.number_input(f"Enter score for {team1}", min_value=0, step=1, key=f"{team1}_{team2}_1")
-    team2_score = st.number_input(f"Enter score for {team2}", min_value=0, step=1, key=f"{team1}_{team2}_2")
-    
-    # Append match score details to list
-    match_scores.append({
-        "Round": selected_round,
-        "Pitch": selected_pitch,
-        "Team1": team1,
-        "Team1 Score": team1_score,
-        "Team2": team2,
-        "Team2 Score": team2_score
-    })
+    for pitch in pitches:
+        if st.button(pitch):
+            st.session_state.selected_pitch = pitch
+            st.session_state.step = 3  # Go to Step 3
 
-# Step 4: Submit and Record Scores
-if st.button("Submit Scores"):
-    for match in match_scores:
-        insert_match_result(
-            match["Round"],
-            match["Pitch"],
-            match["Team1"],
-            match["Team1 Score"],
-            match["Team2"],
-            match["Team2 Score"]
-        )
-    st.success("Scores recorded successfully in the database!")
-
-# Display recorded scores from the database
-if st.button("View All Recorded Scores"):
-    conn = sqlite3.connect('results.db')
-    scores_df = pd.read_sql_query("SELECT * FROM match_results", conn)
-    conn.close()
+# Step 3: Enter Scores
+elif st.session_state.step == 3:
+    st.title(f"Enter Scores for {st.session_state.selected_round} - {st.session_state.selected_pitch}")
+    pitch_matches = matches_df[
+        (matches_df['Round'] == st.session_state.selected_round) & 
+        (matches_df['Pitch'] == st.session_state.selected_pitch)
+    ]
     
-    # Display the scores as a table
-    st.write("All Recorded Scores")
-    st.dataframe(scores_df)
+    match_scores = []
+    for _, row in pitch_matches.iterrows():
+        team1 = row['Team1']
+        team2 = row['Team2']
+        
+        st.write(f"Match: {team1} vs {team2}")
+        team1_score = st.number_input(f"Enter score for {team1}", min_value=0, step=1, key=f"{team1}_{team2}_1")
+        team2_score = st.number_input(f"Enter score for {team2}", min_value=0, step=1, key=f"{team1}_{team2}_2")
+        
+        match_scores.append({
+            "Round": st.session_state.selected_round,
+            "Pitch": st.session_state.selected_pitch,
+            "Team1": team1,
+            "Team1 Score": team1_score,
+            "Team2": team2,
+            "Team2 Score": team2_score
+        })
+
+    # Submit scores
+    if st.button("Submit Scores"):
+        for match in match_scores:
+            insert_match_result(
+                match["Round"],
+                match["Pitch"],
+                match["Team1"],
+                match["Team1 Score"],
+                match["Team2"],
+                match["Team2 Score"]
+            )
+        st.success("Scores recorded successfully in the database!")
+        # Reset the app state
+        st.session_state.step = 1
+        st.session_state.selected_round = None
+        st.session_state.selected_pitch = None

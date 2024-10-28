@@ -111,3 +111,13 @@ if st.button("Submit Scores"):
             match["Team2 Score"]
         )
     st.success("Scores recorded successfully in the database!")
+
+# Display recorded scores from the database
+if st.button("View All Recorded Scores"):
+    conn = sqlite3.connect('results.db')
+    scores_df = pd.read_sql_query("SELECT * FROM match_results", conn)
+    conn.close()
+    
+    # Display the scores as a table
+    st.write("All Recorded Scores")
+    st.dataframe(scores_df)

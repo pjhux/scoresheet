@@ -63,15 +63,38 @@ if 'selected_round' not in st.session_state:
 if 'selected_pitch' not in st.session_state:
     st.session_state.selected_pitch = None
 
+# Custom styling
+st.markdown(
+    """
+    <style>
+    .round-button, .pitch-button, .submit-button {
+        background-color: #4a5bdc;
+        color: white;
+        border: none;
+        width: 100%;
+        padding: 10px;
+        margin-top: 10px;
+        border-radius: 8px;
+        font-size: 18px;
+        text-align: center;
+        cursor: pointer;
+    }
+    .round-button:hover, .pitch-button:hover, .submit-button:hover {
+        background-color: #3e4db8;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
 # Step 1: Select Round
 if st.session_state.step == 1:
     st.title("Select a Round")
     rounds = matches_df['Round'].unique()
     
     for round_num in rounds:
-        if st.button(f"Round {round_num}"):
-            st.session_state.selected_round = round_num
-            st.session_state.step = 2  # Go to Step 2
+        if st.button(f"Round {round_num}", key=f"round_{round_num}", on_click=lambda r=round_num: st.session_state.update({'selected_round': r, 'step': 2})):
+            st.experimental_rerun()  # Ensures immediate navigation
 
 # Step 2: Select Pitch
 elif st.session_state.step == 2:
@@ -80,9 +103,8 @@ elif st.session_state.step == 2:
     pitches = round_matches['Pitch'].unique()
     
     for pitch in pitches:
-        if st.button(pitch):
-            st.session_state.selected_pitch = pitch
-            st.session_state.step = 3  # Go to Step 3
+        if st.button(pitch, key=f"pitch_{pitch}", on_click=lambda p=pitch: st.session_state.update({'selected_pitch': p, 'step': 3})):
+            st.experimental_rerun()  # Ensures immediate navigation
 
 # Step 3: Enter Scores
 elif st.session_state.step == 3:
@@ -111,7 +133,7 @@ elif st.session_state.step == 3:
         })
 
     # Submit scores
-    if st.button("Submit Scores"):
+    if st.button("Submit Scores", key="submit_button"):
         for match in match_scores:
             insert_match_result(
                 match["Round"],
@@ -126,3 +148,4 @@ elif st.session_state.step == 3:
         st.session_state.step = 1
         st.session_state.selected_round = None
         st.session_state.selected_pitch = None
+        st.experimental_rerun()  # Reset to the start screen

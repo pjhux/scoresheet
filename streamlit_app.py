@@ -108,7 +108,7 @@ elif st.session_state.step == 2:
 
 # Step 3: Enter Scores
 elif st.session_state.step == 3:
-    st.title(f"Enter Scores for {st.session_state.selected_round} - {st.session_state.selected_pitch}")
+    st.title(f"Enter Scores for Round {st.session_state.selected_round} - {st.session_state.selected_pitch}")
     pitch_matches = matches_df[
         (matches_df['Round'] == st.session_state.selected_round) & 
         (matches_df['Pitch'] == st.session_state.selected_pitch)

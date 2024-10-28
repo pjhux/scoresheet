@@ -2,12 +2,9 @@ import streamlit as st
 import pandas as pd
 import sqlite3
 
-# Load and use the transformed matches DataFrame directly
-matches_df = pd.DataFrame([
-    {"Round": "Round 1", "Pitch": "Pitch 1", "Team1": "School", "Team2": "Judde"},
-    {"Round": "Round 1", "Pitch": "Pitch 2", "Team1": "Park", "Team2": "Hill Side"},
-    # ... include all transformed rows here
-])
+# Load the full fixtures.csv dynamically
+fixtures_path = 'fixtures.csv'  # Ensure this file is in the same directory as the app or provide a path
+matches_df = pd.read_csv(fixtures_path)
 
 # Database setup function
 def init_db():

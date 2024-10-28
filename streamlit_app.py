@@ -144,14 +144,14 @@ elif st.session_state.step == 3:
                 match["Team2 Score"]
             )
         st.success("Scores recorded successfully in the database!")
-        # Reset the app state
+        # Reset the app state after submission
         st.session_state.step = 1
         st.session_state.selected_round = None
         st.session_state.selected_pitch = None
-        st.experimental_rerun()  # Reset to the start screen
 
     # Button to view all recorded scores
     if st.button("View All Recorded Scores"):
+        # Query and display all recorded scores from the database
         conn = sqlite3.connect('results.db')
         scores_df = pd.read_sql_query("SELECT * FROM match_results", conn)
         conn.close()

@@ -71,7 +71,7 @@ st.markdown(
         background-color: #4a5bdc;
         color: white;
         border: none;
-        width: 100%;
+        width: 100px;
         padding: 10px;
         margin-top: 10px;
         border-radius: 8px;

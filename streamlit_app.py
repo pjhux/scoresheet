@@ -30,7 +30,7 @@ matches_df = load_and_clean_fixtures()
 def send_email(subject, body):
     sender_email = "pjhuxley@gmail.com"  # Replace with your Gmail address
     receiver_email = "pjh@tonbridge-school.org"
-    password = "aeoh mvtr ikaq nsac"  # Replace with your app-specific password
+    password = "awif kltn wdpa ngpt"  # Replace with your app-specific password
 
     # Create the email
     msg = MIMEMultipart()

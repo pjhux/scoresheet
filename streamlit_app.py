@@ -1,6 +1,8 @@
 import streamlit as st
 import pandas as pd
-import sqlite3
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
 # Load and clean the fixtures data from CSV
 def load_and_clean_fixtures():
@@ -24,36 +26,28 @@ def load_and_clean_fixtures():
 
 matches_df = load_and_clean_fixtures()
 
-# Initialize database connection
-def init_db():
-    conn = sqlite3.connect('results.db')
-    cursor = conn.cursor()
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS match_results (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            round TEXT,
-            pitch TEXT,
-            team1 TEXT,
-            team1_score INTEGER,
-            team2 TEXT,
-            team2_score INTEGER
-        )
-    ''')
-    conn.commit()
-    conn.close()
+# Email configuration
+def send_email(subject, body):
+    sender_email = "pjhuxley@gmail.com"  # Replace with your email
+    receiver_email = "pjh@tonbridge-school.org"
+    password = "Giroud12"  # Replace with an app-specific password if using Gmail 2FA
 
-init_db()
+    # Create the email
+    msg = MIMEMultipart()
+    msg["From"] = sender_email
+    msg["To"] = receiver_email
+    msg["Subject"] = subject
+    msg.attach(MIMEText(body, "plain"))
 
-# Helper function to insert match results into the database
-def insert_match_result(round, pitch, team1, team1_score, team2, team2_score):
-    conn = sqlite3.connect('results.db')
-    cursor = conn.cursor()
-    cursor.execute('''
-        INSERT INTO match_results (round, pitch, team1, team1_score, team2, team2_score)
-        VALUES (?, ?, ?, ?, ?, ?)
-    ''', (round, pitch, team1, team1_score, team2, team2_score))
-    conn.commit()
-    conn.close()
+    # Send the email
+    try:
+        with smtplib.SMTP("smtp.gmail.com", 587) as server:
+            server.starttls()  # Enable security
+            server.login(sender_email, password)
+            server.send_message(msg)
+        st.success("Scores emailed successfully!")
+    except Exception as e:
+        st.error(f"Failed to send email: {e}")
 
 # Navigation state management
 if 'step' not in st.session_state:
@@ -71,7 +65,7 @@ st.markdown(
         background-color: #4a5bdc;
         color: white;
         border: none;
-        width: 100px;
+        width: 100%;
         padding: 10px;
         margin-top: 10px;
         border-radius: 8px;
@@ -106,9 +100,9 @@ elif st.session_state.step == 2:
         if st.button(pitch, key=f"pitch_{pitch}", on_click=lambda p=pitch: st.session_state.update({'selected_pitch': p, 'step': 3})):
             st.experimental_rerun()  # Ensures immediate navigation
 
-# Step 3: Enter Scores
+# Step 3: Enter Scores and Email Results
 elif st.session_state.step == 3:
-    st.title(f"Enter Scores for Round {st.session_state.selected_round} - {st.session_state.selected_pitch}")
+    st.title(f"Enter Scores for {st.session_state.selected_round} - {st.session_state.selected_pitch}")
     pitch_matches = matches_df[
         (matches_df['Round'] == st.session_state.selected_round) & 
         (matches_df['Pitch'] == st.session_state.selected_pitch)
@@ -132,29 +126,20 @@ elif st.session_state.step == 3:
             "Team2 Score": team2_score
         })
 
-    # Submit scores
+    # Submit scores and send email
     if st.button("Submit Scores", key="submit_button"):
+        # Format the email body
+        email_body = f"Scores for {st.session_state.selected_round} - {st.session_state.selected_pitch}:\n\n"
         for match in match_scores:
-            insert_match_result(
-                match["Round"],
-                match["Pitch"],
-                match["Team1"],
-                match["Team1 Score"],
-                match["Team2"],
-                match["Team2 Score"]
-            )
-        st.success("Scores recorded successfully in the database!")
+            email_body += (f"{match['Team1']} vs {match['Team2']}:\n"
+                           f"  {match['Team1']} Score: {match['Team1 Score']}\n"
+                           f"  {match['Team2']} Score: {match['Team2 Score']}\n\n")
+
+        # Send the email
+        send_email(subject=f"Scores for Round {st.session_state.selected_round}, {st.session_state.selected_pitch}", body=email_body)
+
         # Reset the app state after submission
         st.session_state.step = 1
         st.session_state.selected_round = None
         st.session_state.selected_pitch = None
-
-    # Button to view all recorded scores
-    if st.button("View All Recorded Scores"):
-        # Query and display all recorded scores from the database
-        conn = sqlite3.connect('results.db')
-        scores_df = pd.read_sql_query("SELECT * FROM match_results", conn)
-        conn.close()
-        
-        st.write("All Recorded Scores")
-        st.dataframe(scores_df)
+        st.experimental_rerun()  # Reset to the start screen

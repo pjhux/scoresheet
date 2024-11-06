@@ -28,8 +28,8 @@ matches_df = load_and_clean_fixtures()
 
 # Email configuration
 def send_email(subject, body):
-    sender_email = "your_email@gmail.com"  # Replace with your Gmail address
-    receiver_email = "pjhuxley@gmail.com"
+    sender_email = "pjhuxley@gmail.com"  # Replace with your Gmail address
+    receiver_email = "pjh@tonbridge-school.org"
     password = "aeoh mvtr ikaq nsac"  # Replace with your app-specific password
 
     # Create the email

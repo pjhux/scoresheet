@@ -28,8 +28,8 @@ matches_df = load_and_clean_fixtures()
 
 # Email configuration
 def send_email(subject, body):
-    sender_email = "pjhuxley@gmail.com"  # Replace with your Gmail address
-    receiver_email = "pjh@tonbridge-school.org"
+    sender_email = "your_email@gmail.com"  # Replace with your Gmail address
+    receiver_email = "pjhuxley@gmail.com"
     password = "aeoh mvtr ikaq nsac"  # Replace with your app-specific password
 
     # Create the email
@@ -88,7 +88,7 @@ if st.session_state.step == 1:
     
     for round_num in rounds:
         if st.button(f"Round {round_num}", key=f"round_{round_num}", on_click=lambda r=round_num: st.session_state.update({'selected_round': r, 'step': 2})):
-            st.experimental_rerun()  # Ensures immediate navigation
+            pass  # Moving to step 2 without experimental rerun
 
 # Step 2: Select Pitch
 elif st.session_state.step == 2:
@@ -98,7 +98,7 @@ elif st.session_state.step == 2:
     
     for pitch in pitches:
         if st.button(pitch, key=f"pitch_{pitch}", on_click=lambda p=pitch: st.session_state.update({'selected_pitch': p, 'step': 3})):
-            st.experimental_rerun()  # Ensures immediate navigation
+            pass  # Moving to step 3 without experimental rerun
 
 # Step 3: Enter Scores and Email Results
 elif st.session_state.step == 3:
@@ -138,8 +138,8 @@ elif st.session_state.step == 3:
         # Send the email
         send_email(subject=f"Scores for Round {st.session_state.selected_round}, {st.session_state.selected_pitch}", body=email_body)
 
-        # Reset the app state after submission
+        # Reset the app state without rerunning
         st.session_state.step = 1
         st.session_state.selected_round = None
         st.session_state.selected_pitch = None
-        st.experimental_rerun()  # Reset to the start screen
+        st.success("Scores have been submitted and the form is reset.")

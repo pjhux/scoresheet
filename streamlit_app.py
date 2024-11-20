@@ -6,7 +6,7 @@ from email.mime.text import MIMEText
 
 # Load and clean the fixtures data from CSV
 def load_and_clean_fixtures():
-    fixtures_path = 'fixtures.csv'
+    fixtures_path = 'fixtures2.csv'
     df = pd.read_csv(fixtures_path)
     cleaned_matches = []
     for i in range(3, len(df)):
